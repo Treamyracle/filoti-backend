@@ -13,7 +13,7 @@
     }
   ],
   "env": {
-    "DATABASE_URL": "@your_supabase_database_url",
-    "SESSION_SECRET": "@your_session_secret"
+    "DATABASE_URL": "DATABASE_URL=postgresql://postgres:blackpink12345@db.ugcabvgyvarjkwxifhxz.supabase.co:5432/postgres",
+    "SESSION_SECRET": "test"
   }
 }
