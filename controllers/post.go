@@ -46,7 +46,6 @@ func CreatePost(c *gin.Context) {
 	}
 	// Buat objek Post
 	post := models.Post{
-		UserID:     userID,
 		Title:      input.Title,
 		Keterangan: input.Keterangan,
 		Ruangan:    input.Ruangan,
@@ -74,7 +73,6 @@ func CreatePost(c *gin.Context) {
 	// Buat notification: misalnya message dasar
 	message := "New post created: " + post.Title
 	notification := models.Notification{
-		UserID:  userID,
 		PostID:  post.ID,
 		Message: message,
 		IsRead:  false,
