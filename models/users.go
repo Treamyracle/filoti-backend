@@ -10,6 +10,4 @@ type User struct {
 	Username  string    `gorm:"uniqueIndex;not null" json:"username"`
 	Password  string    `gorm:"not null" json:"-"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
-	// jika ingin relasi:
-	Posts []Post `gorm:"constraint:OnDelete:CASCADE" json:"-"`
 }
