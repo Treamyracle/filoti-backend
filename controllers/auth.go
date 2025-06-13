@@ -126,3 +126,36 @@ func Logout(c *gin.Context) {
 	log.Println("User logged out.")
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
+
+// controllers/auth.go (Tambahkan fungsi ini)
+
+// GetCurrentUser handler: mendapatkan detail user yang sedang login
+func GetCurrentUser(c *gin.Context) {
+	// userID sudah diset di context oleh middleware AuthRequired()
+	uidVal, exists := c.Get("userID")
+	if !exists {
+		// Seharusnya tidak terjadi jika AuthRequired() sudah bekerja
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: UserID not found in context"})
+		return
+	}
+
+	userID, ok := uidVal.(uint)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid UserID type in context"})
+		return
+	}
+
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Kembalikan hanya informasi yang aman untuk frontend
+	c.JSON(http.StatusOK, gin.H{
+		"id":       user.ID,
+		"username": user.Username,
+		// Jangan kembalikan password hash!
+		"created_at": user.CreatedAt,
+	})
+}

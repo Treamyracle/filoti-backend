@@ -1,8 +1,7 @@
-// routes/routes.go
 package routes
 
 import (
-	"net/http"
+	"net/http" // Pastikan ini diimpor
 	"os"
 	"time"
 
@@ -20,7 +19,7 @@ func SetupRouter() *gin.Engine {
 
 	sessionSecret := os.Getenv("SESSION_SECRET")
 	if sessionSecret == "" {
-		sessionSecret = "secret"
+		sessionSecret = "secret" // sebaiknya override di env
 	}
 	store := cookie.NewStore([]byte(sessionSecret))
 	store.Options(sessions.Options{
@@ -52,24 +51,35 @@ func SetupRouter() *gin.Engine {
 	// Ini adalah fallback jika middleware CORS tidak menangkapnya dengan benar di Vercel.
 	// Ini harus ditempatkan SEBELUM rute spesifik Anda, tapi SETELAH middleware CORS.
 	r.OPTIONS("/*path", func(c *gin.Context) {
-		// Karena middleware CORS sudah diterapkan, ini hanya perlu merespons OK.
-		// Middleware CORS yang akan menambahkan header Access-Control-* yang benar.
 		c.Status(http.StatusNoContent) // 204 No Content adalah respons standar untuk OPTIONS
 		return
 	})
 	// -----------------------------------------------------------------------
 
-	// Auth endpoints
+	// Auth endpoints (ini adalah rute publik, tidak perlu AuthRequired)
 	r.POST("/signup", controllers.Signup)
 	r.POST("/login", controllers.Login)
 	r.POST("/logout", controllers.Logout)
 
-	// Posts: but POST requires auth
-	posts := r.Group("/posts")
-	posts.Use(middleware.AuthRequired())
+	// Grup rute yang memerlukan Autentikasi
+	// Semua rute di dalam `authorized` group akan melewati `middleware.AuthRequired()`
+	authorized := r.Group("/") // Anda bisa mengganti ini dengan r.Group("/api") jika mau prefix
+	authorized.Use(middleware.AuthRequired())
 	{
-		posts.POST("", controllers.CreatePost)
-		posts.GET("", controllers.GetPosts)
+		// Posts routes (sudah ada)
+		posts := authorized.Group("/posts") // Pastikan posts ada di bawah grup yang diautentikasi
+		{
+			posts.POST("", controllers.CreatePost)
+			posts.GET("", controllers.GetPosts)
+			// ... tambahkan rute posts lainnya seperti GetPostByID, UpdatePost, DeletePost
+		}
+
+		// --- TAMBAHKAN RUTE GET /ME DI SINI ---
+		authorized.GET("/me", controllers.GetCurrentUser) // Menggunakan GetCurrentUser dari controllers
+		// ------------------------------------
+
+		// Anda bisa menambahkan rute terautentikasi lain di sini
+		// authorized.GET("/dashboard", controllers.GetDashboardData)
 	}
 
 	return r
