@@ -1,11 +1,13 @@
+// routes/routes.go (Tambahkan di grup yang diautentikasi)
+
 package routes
 
 import (
-	"net/http" // Pastikan ini diimpor
+	"net/http"
 	"os"
 	"time"
 
-	"filoti-backend/controllers"
+	"filoti-backend/controllers" // Pastikan import controllers sudah ada
 	"filoti-backend/middleware"
 
 	"github.com/gin-contrib/cors"
@@ -19,7 +21,7 @@ func SetupRouter() *gin.Engine {
 
 	sessionSecret := os.Getenv("SESSION_SECRET")
 	if sessionSecret == "" {
-		sessionSecret = "secret" // sebaiknya override di env
+		sessionSecret = "secret"
 	}
 	store := cookie.NewStore([]byte(sessionSecret))
 	store.Options(sessions.Options{
@@ -33,9 +35,8 @@ func SetupRouter() *gin.Engine {
 
 	// CORS middleware
 	r.Use(cors.New(cors.Config{
-		// PASTIKAN INI MENCAKUP DOMAIN FRONTEND VERSEL ANDA!
 		AllowOrigins: []string{
-			"https://filoti-frontend.vercel.app", // <--- Contoh domain frontend Vercel Anda
+			"https://filoti-frontend.vercel.app", // <--- GANTI INI DENGAN DOMAIN FRONTEND VERSEL ANDA!
 			"http://localhost:5500",
 			"http://127.0.0.1:5500",
 			"http://localhost:3000",
@@ -47,39 +48,30 @@ func SetupRouter() *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// --- TAMBAHKAN INI UNTUK MENANGANI PREFLIGHT OPTIONS SECARA EKSPLISIT ---
-	// Ini adalah fallback jika middleware CORS tidak menangkapnya dengan benar di Vercel.
-	// Ini harus ditempatkan SEBELUM rute spesifik Anda, tapi SETELAH middleware CORS.
 	r.OPTIONS("/*path", func(c *gin.Context) {
-		c.Status(http.StatusNoContent) // 204 No Content adalah respons standar untuk OPTIONS
+		c.Status(http.StatusNoContent)
 		return
 	})
-	// -----------------------------------------------------------------------
 
-	// Auth endpoints (ini adalah rute publik, tidak perlu AuthRequired)
 	r.POST("/signup", controllers.Signup)
 	r.POST("/login", controllers.Login)
 	r.POST("/logout", controllers.Logout)
 
 	// Grup rute yang memerlukan Autentikasi
-	// Semua rute di dalam `authorized` group akan melewati `middleware.AuthRequired()`
-	authorized := r.Group("/") // Anda bisa mengganti ini dengan r.Group("/api") jika mau prefix
+	authorized := r.Group("/")
 	authorized.Use(middleware.AuthRequired())
 	{
-		// Posts routes (sudah ada)
-		posts := authorized.Group("/posts") // Pastikan posts ada di bawah grup yang diautentikasi
+		posts := authorized.Group("/posts")
 		{
 			posts.POST("", controllers.CreatePost)
 			posts.GET("", controllers.GetPosts)
-			// ... tambahkan rute posts lainnya seperti GetPostByID, UpdatePost, DeletePost
 		}
 
-		// --- TAMBAHKAN RUTE GET /ME DI SINI ---
-		authorized.GET("/me", controllers.GetCurrentUser) // Menggunakan GetCurrentUser dari controllers
-		// ------------------------------------
+		authorized.GET("/me", controllers.GetCurrentUser) // Rute untuk mendapatkan user yang login
 
-		// Anda bisa menambahkan rute terautentikasi lain di sini
-		// authorized.GET("/dashboard", controllers.GetDashboardData)
+		// --- TAMBAHKAN RUTE INI ---
+		authorized.GET("/notifications", controllers.GetNotifications) // Endpoint baru untuk notifikasi
+		// -------------------------
 	}
 
 	return r
