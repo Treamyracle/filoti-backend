@@ -198,7 +198,7 @@ func MarkPostAsDone(c *gin.Context) {
 	var post models.Post
 	tx.First(&post, postID) // Ambil post untuk notifikasi
 
-	notificationMessage := fmt.Sprintf("Laporan '%s' telah diselesaikan oleh %s", post.Title, input.ClaimerName)
+	notificationMessage := fmt.Sprintf("Laporan '%s' telah diselesaikan oleh Admin", post.Title)
 	notification := models.Notification{
 		PostID:  uint(postID),
 		Message: notificationMessage,
