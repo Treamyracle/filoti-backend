@@ -161,3 +161,15 @@ func GetPostByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, postToReturn)
 }
+
+// controllers/post_controller.go (Tambahkan di bagian bawah file)
+
+// GetUniqueLocations handler: Mengambil daftar lokasi/ruangan unik dari semua post
+func GetUniqueLocations(c *gin.Context) {
+	var locations []string
+	if err := config.DB.Model(&models.Post{}).Distinct("ruangan").Pluck("ruangan", &locations).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch unique locations: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, locations) // Mengembalikan array string
+}
