@@ -130,11 +130,11 @@ func Logout(c *gin.Context) {
 // controllers/auth.go (Tambahkan fungsi ini)
 
 // GetCurrentUser handler: mendapatkan detail user yang sedang login
+// controllers/auth.go (Bagian fungsi GetCurrentUser)
+
 func GetCurrentUser(c *gin.Context) {
-	// userID sudah diset di context oleh middleware AuthRequired()
 	uidVal, exists := c.Get("userID")
 	if !exists {
-		// Seharusnya tidak terjadi jika AuthRequired() sudah bekerja
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: UserID not found in context"})
 		return
 	}
@@ -151,11 +151,64 @@ func GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	// Kembalikan hanya informasi yang aman untuk frontend
+	// Kembalikan hanya informasi yang aman untuk frontend, termasuk is_admin
 	c.JSON(http.StatusOK, gin.H{
-		"id":       user.ID,
-		"username": user.Username,
-		// Jangan kembalikan password hash!
+		"id":         user.ID,
+		"username":   user.Username,
+		"is_admin":   user.IsAdmin, // Tambahkan is_admin di respons
 		"created_at": user.CreatedAt,
 	})
+}
+
+// controllers/auth.go (Lanjutkan di file yang sama)
+
+// GuestLogin handler: login sebagai guest
+func GuestLogin(c *gin.Context) {
+	const guestUsername = "guest" // Username khusus untuk guest
+
+	var user models.User
+	// Cari user guest
+	if err := config.DB.Where("username = ?", guestUsername).First(&user).Error; err != nil {
+		// Jika user guest tidak ditemukan, buat baru
+		if err.Error() == "record not found" {
+			log.Printf("GuestLogin: Guest user '%s' not found, creating new one.", guestUsername)
+			// Buat password dummy untuk guest (tidak akan digunakan untuk login langsung)
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte("guestpassword123"), bcrypt.DefaultCost) // Password dummy, tidak akan digunakan untuk login
+			if err != nil {
+				log.Printf("GuestLogin: Failed to hash dummy password for guest - %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to prepare guest account"})
+				return
+			}
+
+			guestUser := models.User{
+				Username: guestUsername,
+				Password: string(hashedPassword),
+				IsAdmin:  false, // Guest tidak boleh jadi admin
+			}
+			if err := config.DB.Create(&guestUser).Error; err != nil {
+				log.Printf("GuestLogin: Failed to create guest user in DB - %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create guest account"})
+				return
+			}
+			user = guestUser // Set user sebagai guest yang baru dibuat
+			log.Printf("GuestLogin: Guest user '%s' created successfully with ID %d.", user.Username, user.ID)
+		} else {
+			log.Printf("GuestLogin: DB error when looking for guest user - %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find or create guest account"})
+			return
+		}
+	}
+
+	// Set session cookie untuk user guest
+	session := sessions.Default(c)
+	session.Set("id", int(user.ID))
+	// Simpan status IsAdmin di session agar mudah diakses frontend
+	session.Set("is_admin", user.IsAdmin) // Simpan is_admin di session
+	if err := session.Save(); err != nil {
+		log.Printf("GuestLogin: Failed to save session for guest user %s - %v", user.Username, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+		return
+	}
+	log.Printf("GuestLogin: Guest user '%s' logged in successfully. Session ID: %v", user.Username, user.ID)
+	c.JSON(http.StatusOK, gin.H{"message": "Logged in as guest successfully", "is_admin": user.IsAdmin})
 }

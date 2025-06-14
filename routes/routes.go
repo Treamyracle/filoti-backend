@@ -57,6 +57,7 @@ func SetupRouter() *gin.Engine {
 	r.POST("/login", controllers.Login)
 	r.POST("/logout", controllers.Logout)
 	r.GET("/locations", controllers.GetUniqueLocations)
+	r.POST("/guest-login", controllers.GuestLogin)
 
 	// Grup rute yang memerlukan Autentikasi
 	authorized := r.Group("/")
