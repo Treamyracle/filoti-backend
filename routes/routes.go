@@ -34,7 +34,6 @@ func SetupRouter() *gin.Engine {
 	// CORS middleware
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
-			os.Getenv("FRONTEND_URL"), // Menggunakan variabel lingkungan untuk fleksibilitas
 			"http://localhost:5500",
 			"http://127.0.0.1:5500",
 			"http://localhost:3000",
