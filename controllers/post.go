@@ -8,6 +8,7 @@ import (
 	"filoti-backend/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Input untuk membuat post
@@ -121,4 +122,42 @@ func GetPosts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, postsToReturn)
+}
+
+// --- TAMBAHKAN FUNGSI BARU INI UNTUK GET /posts/:id ---
+// GetPostByID handler: mengambil detail post berdasarkan ID
+func GetPostByID(c *gin.Context) {
+	// Ambil ID dari URL parameter
+	id := c.Param("id")
+	var post models.Post
+
+	// Cari post di database berdasarkan ID
+	// Preload Status dan mungkin Admin (jika AdminID ditambahkan ke Post)
+	if err := config.DB.Preload("Status").First(&post, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve post: " + err.Error()})
+		return
+	}
+
+	// Anda mungkin ingin menambahkan AdminID ke model Post
+	// dan preload Admin di sini jika ingin menampilkan username admin yang membuat post ini
+	username := "Administrator" // Placeholder
+
+	// Format respons agar sesuai dengan yang diharapkan frontend
+	postToReturn := gin.H{
+		"id":         post.ID,
+		"username":   username, // Placeholder atau dari relasi Admin
+		"image_url":  post.ImageURL,
+		"title":      post.Title,
+		"ruangan":    post.Ruangan,
+		"keterangan": post.Keterangan,
+		"item_type":  post.ItemType,
+		"created_at": post.CreatedAt,
+		"status":     post.Status.Status, // Mengirim status int
+	}
+
+	c.JSON(http.StatusOK, postToReturn)
 }

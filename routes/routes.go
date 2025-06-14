@@ -65,6 +65,7 @@ func SetupRouter() *gin.Engine {
 		{
 			posts.POST("", controllers.CreatePost)
 			posts.GET("", controllers.GetPosts)
+			posts.GET("/:id", controllers.GetPostByID)
 		}
 
 		authorized.GET("/me", controllers.GetCurrentUser) // Rute untuk mendapatkan user yang login
