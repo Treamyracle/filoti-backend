@@ -5,8 +5,7 @@ import (
 )
 
 type Post struct {
-	ID uint `gorm:"primaryKey" json:"id"`
-	// UserID      uint      `gorm:"not null;index" json:"user_id"` // <-- DIHAPUS sesuai permintaan
+	ID         uint      `gorm:"primaryKey" json:"id"`
 	ImageURL   string    `json:"image_url"`
 	Title      string    `json:"title"`
 	Ruangan    string    `json:"ruangan"`
@@ -14,10 +13,6 @@ type Post struct {
 	ItemType   string    `json:"itemType"`
 	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
 
-	// Relasi
-	Status        Status         `gorm:"constraint:OnDelete:CASCADE" json:"status"`
+	Status        Status         `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE" json:"status"` // Status sebagai relasi satu-ke-satu
 	Notifications []Notification `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE" json:"-"`
-	// Jika ingin tetap ada relasi ke admin yang membuat, tambahkan AdminID:
-	// AdminID     uint      `gorm:"not null;index" json:"admin_id"`
-	// Admin       *User     `gorm:"foreignKey:AdminID" json:"-"`
 }
