@@ -37,7 +37,7 @@ func SetupRouter() *gin.Engine {
 			"http://localhost:5500",
 			"http://127.0.0.1:5500",
 			"http://localhost:3000",
-			"filoti-frontend.vercel.app",
+			"https://filoti-frontend.vercel.app",
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
